@@ -1,9 +1,9 @@
-
+<!DOCTYPE HTML>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Data Logging</title>
+    <title>Download WebSocket Data Logging App</title>
     <style>
         body, html {
             height: 100%;
@@ -17,136 +17,24 @@
     </style>
 </head>
 <body>
-<h3>Description</h3>
-<p>This app logs the data being sent by inverter to a csv file.</p>
-<ul>
-	<b>Steps to follow</b>
-	<li>Enter the ip of the respective inverter. </li>
-	<li>Upon browse save the file in a location of your choise.</li>
-	<li> In order to see the logged data, you will have to stop logging first</li>
-
-</ul>
-<br>
-    <label for="ipAddress"><b>Enter the Inverter IP:</b></label>
-    <input type="text" id="ipAddress" placeholder="Enter IP address" />
-    <button onclick="connectAndStartLogging()">Connect and Start Logging</button>
-    <button onclick="stopLogging()">Stop Logging</button>
-
-    <p id="loggingInfo"></p>
+    <button onclick="downloadApp()">Download App</button>
 
     <script type="text/javascript">
-        let socket;
-        let fileHandle;
-        let writer;
-        let startTime;
-        let rowCount = 0;
-
-        async function connectAndStartLogging() {
-            const ipAddress = document.getElementById("ipAddress").value;
-
-            if (!ipAddress) {
-                alert("Please enter a valid WebSocket Server IP.");
-                return;
-            }
+        async function downloadApp() {
+            const githubRawURL = 'https://raw.githubusercontent.com/sajidali1996/websocketLogger/main/techAppDataLogger.html';
 
             try {
-                const now = new Date();
-                const formattedTime = getFormattedTime(now);
-                const suggestedName = `log_${formattedTime}.csv`;
+                const response = await fetch(githubRawURL);
+                const appCode = await response.text();
 
-                fileHandle = await window.showSaveFilePicker({
-                    suggestedName: suggestedName,
-                    types: [
-                        {
-                            description: 'CSV Files',
-                            accept: {
-                                'text/csv': ['.csv'],
-                            },
-                        },
-                    ],
-                });
-
-                // Create a writer
-                writer = await fileHandle.createWritable();
+                const blob = new Blob([appCode], { type: 'text/html' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'WebSocket_Data_Logging_App.html';
+                link.click();
             } catch (error) {
-                console.error("Error selecting file:", error);
-                return;
+                console.error('Error downloading the app:', error);
             }
-
-            socket = new WebSocket(`ws://${ipAddress}:3000`);
-
-            socket.onmessage = (event) => {
-                const message = document.createElement('li');
-                message.textContent = event.data;
-                let mydata = message.textContent.trim();
-
-                const dataObject = JSON.parse(mydata);
-
-                // Append data to CSV file
-                logDataToFile(dataObject);
-            };
-
-            socket.onclose = () => {
-                alert("WebSocket connection closed.");
-                stopLogging();
-            };
-
-            startTime = new Date();
-            rowCount = 0;
-
-            // Display logging info
-            displayLoggingInfo();
-        }
-
-        function logDataToFile(dataObject) {
-            const time = new Date().toLocaleTimeString();
-            const dataValues = Object.values(dataObject);
-
-            if (rowCount === 0) {
-                // Write header in the first row
-                const headerRow = `Time,${Object.keys(dataObject).join(',')}\n`;
-                writer.write(headerRow);
-            }
-
-            const csvContent = `${time},${dataValues.join(',')}\n`;
-            writer.write(csvContent);
-
-            rowCount++;
-            displayLoggingInfo();
-        }
-
-        function stopLogging() {
-            if (socket) {
-                socket.close();
-            }
-
-            if (writer) {
-                writer.close();
-            }
-        }
-
-        function displayLoggingInfo() {
-            const currentTime = new Date();
-            const elapsedTime = formatElapsedTime(currentTime - startTime);
-            document.getElementById('loggingInfo').innerText = `Elapsed Time: ${elapsedTime} | Rows Written: ${rowCount}`;
-        }
-
-        function getFormattedTime(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}-${minutes}-${seconds}`;
-        }
-
-        function formatElapsedTime(milliseconds) {
-            const seconds = Math.floor(milliseconds / 1000);
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
         }
     </script>
 </body>
